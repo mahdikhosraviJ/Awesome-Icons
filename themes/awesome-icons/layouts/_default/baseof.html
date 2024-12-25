@@ -1,39 +1,49 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{ .Title }}</title>
+  <meta name="description" content="Free and open source icon library">
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    const theme = localStorage.getItem('theme') || 'light';
+    document.documentElement.className = theme;
+    
+    tailwind.config = {
+      darkMode: 'class'
+    }
+  </script>
 </head>
-<body class="bg-gray-100 text-gray-900">
-  <header class="bg-blue-600 text-white p-4 text-center">
-    <h1 class="text-2xl font-bold">{{ .Title }}</h1>
-    <p class="text-sm">Curated by Mahdi Khosravi</p>
-    <div class="mt-4">
-      <input
-        type="text"
-        id="search"
-        placeholder="Search icons..."
-        class="p-2 border rounded w-1/2"
-        oninput="filterIcons()"
-      />
+<body class="bg-gray-50 dark:bg-gray-900 transition-colors">
+  <header class="bg-gradient-to-r from-blue-600 to-blue-800 dark:from-blue-800 dark:to-blue-900 text-white py-6 px-4 shadow-lg">
+    <div class="container mx-auto flex justify-between items-center">
+      <h1 class="text-3xl md:text-4xl font-bold text-center mb-2">{{ .Title }}</h1>
+      <p class="text-blue-100 text-center">Curated by Mahdi Khosravi</p>
+      <button onclick="toggleTheme()" class="p-2 rounded-lg hover:bg-blue-700">
+        <svg class="w-6 h-6 dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+        </svg>
+        <svg class="w-6 h-6 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707"/>
+        </svg>
+      </button>
     </div>
   </header>
-  <main class="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+  <main class="min-h-screen">
     {{ block "main" . }}{{ end }}
   </main>
-  <footer class="bg-gray-800 text-white p-4 text-center">
-    <p class="text-sm">© 2024 Mahdi Khosravi | Open Source Icons</p>
+  <footer class="bg-gray-900 text-white py-6 px-4">
+    <div class="container mx-auto text-center">
+      <p class="text-gray-300">© 2024 Mahdi Khosravi | Open Source Icons</p>
+    </div>
   </footer>
   <script>
-    function filterIcons() {
-      const search = document.getElementById('search').value.toLowerCase();
-      const icons = document.querySelectorAll('.icon-item');
-      icons.forEach(icon => {
-        const name = icon.dataset.name.toLowerCase();
-        icon.style.display = name.includes(search) ? 'block' : 'none';
-      });
+    function toggleTheme() {
+      const html = document.documentElement;
+      const newTheme = html.classList.contains('dark') ? 'light' : 'dark';
+      html.className = newTheme;
+      localStorage.setItem('theme', newTheme);
     }
   </script>
 </body>

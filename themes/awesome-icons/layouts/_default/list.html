@@ -1,24 +1,40 @@
 {{ define "main" }}
-<div class="container mx-auto px-4 py-8">
-  <input 
-    id="searchBox"
-    type="text" 
-    placeholder="Search icons..." 
-    class="border-2 border-gray-300 mb-6 p-2 w-full rounded-md"
-    oninput="filterIcons()"
-  />
+<div class="container mx-auto px-4 py-6">
+  <div class="sticky top-0 z-10 bg-gray-50/80 dark:bg-gray-900/80 backdrop-blur-sm py-4">
+    <div class="max-w-4xl mx-auto space-y-4">
+      <input 
+        id="searchBox"
+        type="text" 
+        placeholder="Search icons... (Press '/' to focus)"
+        class="w-full px-6 py-3 rounded-full border-2 border-blue-200 dark:border-blue-800 dark:bg-gray-800 dark:text-white focus:border-blue-500 focus:outline-none shadow-sm transition duration-200 text-lg"
+        oninput="filterIcons()"
+      />
+      <div class="flex gap-4 justify-center items-center">
+        <div class="flex items-center gap-2">
+          <label class="text-sm dark:text-gray-300">Size:</label>
+          <input type="range" min="16" max="64" value="24" class="w-32" oninput="updateIconSize(this.value)">
+        </div>
+        <select onchange="filterByStyle(this.value)" class="px-3 py-2 rounded-lg border dark:bg-gray-800 dark:text-white">
+          <option value="all">All Styles</option>
+          <option value="outline">Outlined</option>
+          <option value="solid">Solid</option>
+        </select>
+        <input type="color" onchange="updateIconColor(this.value)" class="w-10 h-10 rounded cursor-pointer">
+      </div>
+    </div>
+  </div>
 
-  <div id="iconGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+  <div id="iconGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-4 mt-6">
     {{ range $fileKey, $file := .Site.Data.icons }}
       {{ range $iconKey, $iconValue := $file.icons }}
-      <div class="icon-item bg-white p-4 rounded-lg shadow-md" data-name="{{ $iconKey }}">
-        <div class="text-center mb-4">
+      <div class="icon-item bg-white p-4 rounded-xl shadow-sm hover:shadow-md transition duration-200" data-name="{{ $iconKey }}">
+        <div class="aspect-square flex items-center justify-center mb-3 text-gray-700 hover:text-blue-600 transition duration-200">
           {{ $iconValue | safeHTML }}
         </div>
-        <h2 class="text-lg font-semibold text-center">{{ $iconKey }}</h2>
-        <div class="flex justify-around mt-4">
-          <button onclick="showIcon('{{ $iconValue }}')" class="bg-green-500 text-white px-3 py-1 rounded">Show</button>
-          <button onclick="copyToClipboard('{{ $iconValue }}')" class="bg-yellow-500 text-white px-3 py-1 rounded">Copy</button>
+        <h2 class="text-sm font-medium text-center text-gray-700 truncate">{{ $iconKey }}</h2>
+        <div class="flex justify-center gap-2 mt-3">
+          <button onclick="copyToClipboard('{{ $iconValue }}')" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white text-sm py-1.5 px-3 rounded-lg transition duration-200">Copy</button>
+          <button onclick="showIcon('{{ $iconValue }}')" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm py-1.5 px-3 rounded-lg transition duration-200">View</button>
         </div>
       </div>
       {{ end }}
@@ -27,24 +43,111 @@
 </div>
 
 <script>
+  // Add keyboard shortcuts
+  document.addEventListener('keydown', (e) => {
+    if (e.key === '/' && !e.target.matches('input')) {
+      e.preventDefault();
+      document.getElementById('searchBox').focus();
+    }
+  });
+
+  function updateIconSize(size) {
+    document.querySelectorAll('.icon-item svg').forEach(svg => {
+      svg.style.width = `${size}px`;
+      svg.style.height = `${size}px`;
+    });
+  }
+
+  function updateIconColor(color) {
+    document.querySelectorAll('.icon-item svg').forEach(svg => {
+      svg.style.color = color;
+    });
+  }
+
+  function filterByStyle(style) {
+    if (style === 'all') return;
+    const icons = document.querySelectorAll('.icon-item');
+    icons.forEach(icon => {
+      const hasPath = icon.querySelector('svg path');
+      const hasFill = hasPath?.getAttribute('fill') !== 'none';
+      icon.style.display = (style === 'solid' && hasFill) || (style === 'outline' && !hasFill) 
+        ? 'block' 
+        : 'none';
+    });
+  }
+
+  // Update existing functions
   function filterIcons() {
     const query = document.getElementById("searchBox").value.toLowerCase();
     const icons = document.querySelectorAll(".icon-item");
-
+    
     icons.forEach(icon => {
       const name = icon.getAttribute("data-name").toLowerCase();
-      icon.style.display = name.includes(query) ? "block" : "none";
+      if (name.includes(query)) {
+        icon.style.display = "block";
+        icon.style.opacity = "1";
+      } else {
+        icon.style.display = "none";
+        icon.style.opacity = "0";
+      }
     });
   }
 
   function copyToClipboard(svg) {
-    navigator.clipboard.writeText(svg);
-    alert("SVG copied to clipboard!");
+    navigator.clipboard.writeText(svg)
+      .then(() => {
+        const notification = document.createElement('div');
+        notification.className = 'fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg';
+        notification.textContent = 'SVG copied to clipboard!';
+        document.body.appendChild(notification);
+        setTimeout(() => notification.remove(), 2000);
+      });
   }
 
   function showIcon(svg) {
     const newWindow = window.open("", "_blank");
-    newWindow.document.write(svg);
+    const color = document.querySelector('input[type="color"]').value;
+    newWindow.document.write(`
+      <html>
+        <head>
+          <title>Icon Preview</title>
+          <style>
+            body { 
+              display: flex; 
+              flex-direction: column;
+              gap: 20px;
+              justify-content: center; 
+              align-items: center; 
+              min-height: 100vh; 
+              margin: 0;
+              background: #f9fafb;
+            }
+            svg { 
+              width: 50%; 
+              height: 50%;
+              color: ${color};
+            }
+            .download-btn {
+              padding: 8px 16px;
+              background: #3b82f6;
+              color: white;
+              border-radius: 8px;
+              cursor: pointer;
+            }
+          </style>
+        </head>
+        <body>
+          ${svg}
+          <button class="download-btn" onclick="(function(){
+            const svgBlob = new Blob(['${svg}'], {type: 'image/svg+xml'});
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(svgBlob);
+            link.download = 'icon.svg';
+            link.click();
+          })()">Download SVG</button>
+        </body>
+      </html>
+    `);
   }
 </script>
 {{ end }}
