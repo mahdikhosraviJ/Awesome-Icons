@@ -1,0 +1,14 @@
+{{ define "main" }}
+{{ range $key, $value := .Site.Data.icons }}
+  {{ range $iconKey, $iconValue := $value.icons }}
+  <div class="icon-item bg-white p-4 rounded-lg shadow-md" data-name="{{ $iconKey }}">
+    <div class="text-center mb-4">{!! $iconValue !!}</div>
+    <h2 class="text-lg font-semibold text-center">{{ $iconKey }}</h2>
+    <div class="flex justify-around mt-4">
+      <button onclick="showIcon('{{ $iconValue }}')" class="bg-green-500 text-white px-3 py-1 rounded">Show</button>
+      <button onclick="copyToClipboard('{{ $iconValue }}')" class="bg-yellow-500 text-white px-3 py-1 rounded">Copy</button>
+    </div>
+  </div>
+  {{ end }}
+{{ end }}
+{{ end }}
