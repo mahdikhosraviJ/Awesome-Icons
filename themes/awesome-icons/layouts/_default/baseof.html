@@ -13,7 +13,23 @@
     tailwind.config = {
       darkMode: 'class'
     }
+
   </script>
+  <style>
+    .favorite-btn .heart-icon {
+      width: 24px;
+      height: 24px;
+      transition: fill 0.3s ease, stroke 0.3s ease;
+    }
+    .favorite-btn.filled .heart-icon {
+      fill: #ef4444; /* Red color for filled heart */
+      stroke: #ef4444; /* Red outline */
+    }
+    .favorite-btn:not(.filled) .heart-icon {
+      fill: none;
+      stroke: #9ca3af; /* Gray outline for unfilled heart */
+    }
+  </style>
 </head>
 <body class="bg-gray-50 dark:bg-gray-900 transition-colors">
   <header class="bg-gradient-to-r from-blue-600 to-blue-800 dark:from-blue-800 dark:to-blue-900 text-white py-6 px-4 shadow-lg">
@@ -29,6 +45,13 @@
         </svg>
       </button>
     </div>
+    <nav class="mt-4">
+      <ul class="flex justify-center space-x-4">
+        <li><a href="{{ .Site.BaseURL }}" class="text-white hover:underline">Home</a></li>
+        <li><a href="{{ .Site.BaseURL }}iconpacks" class="text-white hover:underline">Icon Packs</a></li>
+        <li><a href="{{ .Site.BaseURL }}allicons" class="text-white hover:underline">All Icons</a></li>
+      </ul>
+    </nav>
   </header>
   <main class="min-h-screen">
     {{ block "main" . }}{{ end }}

@@ -1,0 +1,193 @@
+{{ define "main" }}
+<div class="container mx-auto px-4 py-6">
+    <div class="sticky top-0 z-10 bg-gray-50/80 dark:bg-gray-900/80 backdrop-blur-sm py-4">
+        <div class="max-w-4xl mx-auto space-y-4">
+          <input 
+            id="searchBox"
+            type="text" 
+            placeholder="Search icons... (Press '/' to focus)"
+            class="w-full px-6 py-3 rounded-full border-2 border-blue-200 dark:border-blue-800 dark:bg-gray-800 dark:text-white focus:border-blue-500 focus:outline-none shadow-sm transition duration-200 text-lg"
+            oninput="filterIcons()"
+          />
+          <div class="flex gap-4 justify-center items-center">
+            <div class="flex items-center gap-2">
+              <label class="text-sm dark:text-gray-300">Size:</label>
+              <input type="range" min="16" max="64" value="24" class="w-32" oninput="updateIconSize(this.value)">
+            </div>
+            <select onchange="filterByStyle(this.value)" class="px-3 py-2 rounded-lg border dark:bg-gray-800 dark:text-white">
+              <option value="all">All Styles</option>
+              <option value="outline">Outlined</option>
+              <option value="solid">Solid</option>
+            </select>
+            <input type="color" onchange="updateIconColor(this.value)" class="w-10 h-10 rounded cursor-pointer">
+            <button onclick="filterFavorites()" class="px-3 py-2 rounded-lg border dark:bg-gray-800 dark:text-white">Favorites</button>
+            <select onchange="updatePreviewBackground(this.value)" class="px-3 py-2 rounded-lg border dark:bg-gray-800 dark:text-white">
+              <option value="default">Default</option>
+              <option value="light">Light</option>
+              <option value="dark">Dark</option>
+              <option value="custom">Custom</option>
+            </select>
+            <input type="color" id="customColorPicker" onchange="updatePreviewBackground(this.value)" class="w-10 h-10 rounded cursor-pointer hidden">
+          </div>
+        </div>
+      </div>
+  <h1 class="text-4xl font-bold mb-6">{{ .Title }}</h1>
+  <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+    <!-- Debug info -->
+    {{ printf "Current Title: %s" .Title | safeHTML }}
+    {{ printf "Available Data: %v" .Site.Data.icons | safeHTML }}
+
+    <!-- Access icons data -->
+    {{ with .Site.Data.icons }}
+      {{ range $packName, $packData := . }}
+        {{ if eq $packName ($.Title | lower) }}
+          {{ range $iconKey, $iconValue := $packData.icons }}
+            <div class="icon-item bg-white p-4 rounded-xl shadow-sm hover:shadow-md transition duration-200" data-name="{{ $iconKey }}">
+              <div class="aspect-square flex items-center justify-center mb-3 text-gray-700 hover:text-blue-600 transition duration-200">
+                {{ $iconValue | safeHTML }}
+              </div>
+              <h2 class="text-sm font-medium text-center text-gray-700 truncate">{{ $iconKey }}</h2>
+              <div class="flex justify-center gap-2 mt-3">
+                <button onclick="copyToClipboard('{{ $iconValue }}')" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white text-sm py-1.5 px-3 rounded-lg transition duration-200">Copy</button>
+                <button onclick="downloadIcon('{{ $iconValue }}')" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm py-1.5 px-3 rounded-lg transition duration-200">Download</button>
+              </div>
+            </div>
+          {{ end }}
+        {{ end }}
+      {{ end }}
+    {{ end }}
+  </div>
+</div>
+
+<script>
+  // Add keyboard shortcuts
+  document.addEventListener('keydown', (e) => {
+    if (e.key === '/' && !e.target.matches('input')) {
+      e.preventDefault();
+      document.getElementById('searchBox').focus();
+    }
+  });
+
+  function updateIconSize(size) {
+    document.querySelectorAll('.icon-item svg').forEach(svg => {
+      svg.style.width = `${size}px`;
+      svg.style.height = `${size}px`;
+    });
+  }
+
+  function updateIconColor(color) {
+    document.querySelectorAll('.icon-item svg').forEach(svg => {
+      svg.style.color = color;
+    });
+  }
+
+  function filterByStyle(style) {
+    if (style === 'all') return;
+    const icons = document.querySelectorAll('.icon-item');
+    icons.forEach(icon => {
+      const hasPath = icon.querySelector('svg path');
+      const hasFill = hasPath?.getAttribute('fill') !== 'none';
+      icon.style.display = (style === 'solid' && hasFill) || (style === 'outline' && !hasFill) 
+        ? 'block' 
+        : 'none';
+    });
+  }
+
+  function filterIcons() {
+    const query = document.getElementById("searchBox").value.toLowerCase();
+    const icons = document.querySelectorAll(".icon-item");
+    
+    icons.forEach(icon => {
+      const name = icon.getAttribute("data-name").toLowerCase();
+      if (name.includes(query)) {
+        icon.style.display = "block";
+        icon.style.opacity = "1";
+      } else {
+        icon.style.display = "none";
+        icon.style.opacity = "0";
+      }
+    });
+  }
+
+  function copyToClipboard(svg) {
+    navigator.clipboard.writeText(svg)
+      .then(() => {
+        const notification = document.createElement('div');
+        notification.className = 'fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg';
+        notification.textContent = 'SVG copied to clipboard!';
+        document.body.appendChild(notification);
+        setTimeout(() => notification.remove(), 2000);
+      });
+  }
+
+  function downloadIcon(svg) {
+    const iconItem = event.target.closest('.icon-item');
+    const iconName = iconItem.getAttribute('data-name'); // Get icon name
+    const groupName = iconItem.closest('.icon-group').querySelector('h2').textContent.trim(); // Get group name as license info
+    const fileName = `${iconName}-${groupName}.svg`; // Combine icon name and license
+
+    const svgBlob = new Blob([svg], { type: 'image/svg+xml' }); // Create a blob from the SVG
+    const link = document.createElement('a'); // Create a link element
+    link.href = URL.createObjectURL(svgBlob); // Set the object URL
+    link.download = fileName; // Use the combined name as the file name
+    link.click(); // Trigger the download
+    document.body.removeChild(link); // Clean up the DOM
+  }
+
+  function toggleFavorite(button, iconName) {
+    const favorites = JSON.parse(localStorage.getItem('favorites')) || [];
+    const index = favorites.indexOf(iconName);
+
+    if (index > -1) {
+      // Remove from favorites
+      favorites.splice(index, 1);
+      button.classList.remove('filled');
+    } else {
+      // Add to favorites
+      favorites.push(iconName);
+      button.classList.add('filled');
+    }
+
+    localStorage.setItem('favorites', JSON.stringify(favorites));
+  }
+
+  function filterFavorites() {
+    const favorites = JSON.parse(localStorage.getItem('favorites')) || [];
+    const icons = document.querySelectorAll('.icon-item');
+    icons.forEach(icon => {
+      const name = icon.getAttribute('data-name');
+      icon.style.display = favorites.includes(name) ? 'block' : 'none';
+    });
+  }
+
+  function toggleGroup(button) {
+    const group = button.nextElementSibling;
+    group.classList.toggle('hidden');
+  }
+
+  function updatePreviewBackground(value) {
+    const iconItems = document.querySelectorAll('.icon-item');
+    const customColorPicker = document.getElementById('customColorPicker');
+    
+    if (value === 'custom') {
+      customColorPicker.classList.remove('hidden');
+      value = customColorPicker.value;
+    } else {
+      customColorPicker.classList.add('hidden');
+    }
+
+    iconItems.forEach(item => {
+      if (value === 'default') {
+        item.style.backgroundColor = '';
+      } else if (value === 'light') {
+        item.style.backgroundColor = '#ffffff';
+      } else if (value === 'dark') {
+        item.style.backgroundColor = '#000000';
+      } else {
+        item.style.backgroundColor = value;
+      }
+    });
+  }
+
+</script>
+{{ end }}

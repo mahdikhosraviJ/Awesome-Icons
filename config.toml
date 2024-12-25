@@ -2,3 +2,7 @@ baseURL = "https://mahdikhosraviJ.github.io/Awesome-Icons/"
 languageCode = "en-us"
 title = "Awesome Icons"
 theme = "awesome-icons"
+
+[permalinks]
+  iconpacks = "/iconpacks/:slug/"
+  icons = "/iconpacks/:slug/:title/"
