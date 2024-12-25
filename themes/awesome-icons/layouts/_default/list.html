@@ -1,14 +1,50 @@
 {{ define "main" }}
-{{ range $key, $value := .Site.Data.icons }}
-  {{ range $iconKey, $iconValue := $value.icons }}
-  <div class="icon-item bg-white p-4 rounded-lg shadow-md" data-name="{{ $iconKey }}">
-    <div class="text-center mb-4">{!! $iconValue !!}</div>
-    <h2 class="text-lg font-semibold text-center">{{ $iconKey }}</h2>
-    <div class="flex justify-around mt-4">
-      <button onclick="showIcon('{{ $iconValue }}')" class="bg-green-500 text-white px-3 py-1 rounded">Show</button>
-      <button onclick="copyToClipboard('{{ $iconValue }}')" class="bg-yellow-500 text-white px-3 py-1 rounded">Copy</button>
-    </div>
+<div class="container mx-auto px-4 py-8">
+  <input 
+    id="searchBox"
+    type="text" 
+    placeholder="Search icons..." 
+    class="border-2 border-gray-300 mb-6 p-2 w-full rounded-md"
+    oninput="filterIcons()"
+  />
+
+  <div id="iconGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+    {{ range $fileKey, $file := .Site.Data.icons }}
+      {{ range $iconKey, $iconValue := $file.icons }}
+      <div class="icon-item bg-white p-4 rounded-lg shadow-md" data-name="{{ $iconKey }}">
+        <div class="text-center mb-4">
+          {{ $iconValue | safeHTML }}
+        </div>
+        <h2 class="text-lg font-semibold text-center">{{ $iconKey }}</h2>
+        <div class="flex justify-around mt-4">
+          <button onclick="showIcon('{{ $iconValue }}')" class="bg-green-500 text-white px-3 py-1 rounded">Show</button>
+          <button onclick="copyToClipboard('{{ $iconValue }}')" class="bg-yellow-500 text-white px-3 py-1 rounded">Copy</button>
+        </div>
+      </div>
+      {{ end }}
+    {{ end }}
   </div>
-  {{ end }}
-{{ end }}
+</div>
+
+<script>
+  function filterIcons() {
+    const query = document.getElementById("searchBox").value.toLowerCase();
+    const icons = document.querySelectorAll(".icon-item");
+
+    icons.forEach(icon => {
+      const name = icon.getAttribute("data-name").toLowerCase();
+      icon.style.display = name.includes(query) ? "block" : "none";
+    });
+  }
+
+  function copyToClipboard(svg) {
+    navigator.clipboard.writeText(svg);
+    alert("SVG copied to clipboard!");
+  }
+
+  function showIcon(svg) {
+    const newWindow = window.open("", "_blank");
+    newWindow.document.write(svg);
+  }
+</script>
 {{ end }}
